@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f2f5f0" />
+    <title>Local SOC | Alert Console</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Local SOC, início">
+        <span class="brand-mark">LS</span>
+        <span class="brand-name">LOCAL <strong>SOC</strong></span>
+      </a>
+      <div class="connection-state">
+        <span id="connection-dot" class="connection-dot"></span>
+        <span id="connection-label">Conectando à API</span>
+        <span class="topbar-divider"></span>
+        <span id="last-updated">Aguardando dados</span>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="page-heading">
+        <div>
+          <p class="eyebrow">SECURITY OPERATIONS / HOME LAB</p>
+          <h1>Central de alertas</h1>
+          <p class="page-description">
+            Eventos normalizados, detecções e triagem do laboratório.
+          </p>
+        </div>
+        <button id="refresh-button" class="button button-secondary" type="button">
+          Atualizar dados
+        </button>
+      </section>
+
+      <p id="notice" class="notice" role="status" hidden></p>
+
+      <section class="metrics" aria-label="Resumo do SOC">
+        <article class="metric metric-primary">
+          <span>Alertas abertos</span>
+          <strong id="metric-open">--</strong>
+          <small>aguardando triagem</small>
+        </article>
+        <article class="metric">
+          <span>Severidade alta</span>
+          <strong id="metric-high">--</strong>
+          <small>em todas as execuções</small>
+        </article>
+        <article class="metric">
+          <span>Eventos</span>
+          <strong id="metric-events">--</strong>
+          <small>registrados localmente</small>
+        </article>
+        <article class="metric">
+          <span>Execuções</span>
+          <strong id="metric-runs">--</strong>
+          <small>análises armazenadas</small>
+        </article>
+      </section>
+
+      <section class="workbench" aria-label="Console de monitoramento">
+        <div class="workbench-header">
+          <nav class="view-tabs" aria-label="Seções do console">
+            <button class="view-tab is-active" data-view="alerts" type="button">
+              Alertas <span id="alert-count" class="tab-count">0</span>
+            </button>
+            <button class="view-tab" data-view="events" type="button">Eventos</button>
+            <button class="view-tab" data-view="runs" type="button">Execuções</button>
+          </nav>
+
+          <div id="alert-filters" class="filter-bar">
+            <label>
+              Status
+              <select id="status-filter">
+                <option value="">Todos</option>
+                <option value="open">Aberto</option>
+                <option value="investigating">Em investigação</option>
+                <option value="closed">Fechado</option>
+              </select>
+            </label>
+            <label>
+              Severidade
+              <select id="severity-filter">
+                <option value="">Todas</option>
+                <option value="high">Alta</option>
+                <option value="medium">Média</option>
+                <option value="low">Baixa</option>
+              </select>
+            </label>
+            <label>
+              Execução
+              <select id="run-filter">
+                <option value="">Todas</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <section id="alerts-view" class="view-panel">
+          <div class="alert-layout">
+            <div class="table-section">
+              <div class="section-heading">
+                <div>
+                  <h2>Fila de alertas</h2>
+                  <p>Selecione um alerta para revisar as evidências.</p>
+                </div>
+              </div>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col">Horário</th>
+                      <th scope="col">Nível</th>
+                      <th scope="col">Detecção</th>
+                      <th scope="col">Origem</th>
+                      <th scope="col">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="alerts-table-body"></tbody>
+                </table>
+                <p id="alerts-empty" class="empty-state" hidden>
+                  Nenhum alerta corresponde aos filtros.
+                </p>
+              </div>
+            </div>
+
+            <aside id="alert-detail" class="detail-panel" aria-live="polite">
+              <div id="detail-empty" class="detail-empty">
+                <span class="detail-index">TRIAGE / 01</span>
+                <h2>Selecione um alerta</h2>
+                <p>As evidências e ações de triagem aparecerão aqui.</p>
+              </div>
+              <div id="detail-content" hidden>
+                <div class="detail-heading">
+                  <span id="detail-severity" class="severity-badge"></span>
+                  <span id="detail-rule-id" class="detail-index"></span>
+                </div>
+                <h2 id="detail-title"></h2>
+                <p id="detail-summary" class="detail-summary"></p>
+                <dl id="detail-facts" class="fact-list"></dl>
+
+                <div class="timeline-section">
+                  <h3>Eventos relacionados</h3>
+                  <ol id="event-timeline" class="event-timeline"></ol>
+                </div>
+
+                <form id="triage-form" class="triage-form">
+                  <h3>Registro do analista</h3>
+                  <label>
+                    Status
+                    <select id="triage-status" required>
+                      <option value="open">Aberto</option>
+                      <option value="investigating">Em investigação</option>
+                      <option value="closed">Fechado</option>
+                    </select>
+                  </label>
+                  <label>
+                    Notas
+                    <textarea
+                      id="triage-notes"
+                      rows="3"
+                      maxlength="5000"
+                      placeholder="Registre evidências e decisão..."
+                    ></textarea>
+                  </label>
+                  <button class="button button-primary" type="submit">
+                    Salvar triagem
+                  </button>
+                </form>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="events-view" class="view-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <h2>Explorador de eventos</h2>
+              <p>Registros recebidos pela última análise selecionada.</p>
+            </div>
+            <label class="compact-filter">
+              Execução
+              <select id="events-run-filter">
+                <option value="">Todas</option>
+              </select>
+            </label>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Timestamp</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Origem</th>
+                  <th scope="col">Usuário</th>
+                  <th scope="col">Resultado</th>
+                  <th scope="col">Host</th>
+                </tr>
+              </thead>
+              <tbody id="events-table-body"></tbody>
+            </table>
+            <p id="events-empty" class="empty-state" hidden>Nenhum evento encontrado.</p>
+          </div>
+        </section>
+
+        <section id="runs-view" class="view-panel" hidden>
+          <div class="section-heading">
+            <div>
+              <h2>Histórico de análises</h2>
+              <p>Cenários processados e seus resultados.</p>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Executada em</th>
+                  <th scope="col">Cenário</th>
+                  <th scope="col">Eventos</th>
+                  <th scope="col">Alertas</th>
+                  <th scope="col">Identificador</th>
+                </tr>
+              </thead>
+              <tbody id="runs-table-body"></tbody>
+            </table>
+            <p id="runs-empty" class="empty-state" hidden>Nenhuma execução encontrada.</p>
+          </div>
+        </section>
+      </section>
+      <footer class="page-footer">LOCAL SOC LAB <span>•</span> Dados locais e cenários sintéticos</footer>
+    </main>
+  </body>
+</html>
