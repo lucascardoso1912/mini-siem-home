@@ -1,23 +1,23 @@
-# Análise simulada 001: falhas de login seguidas de sucesso
+# Simulated analysis 001: failed logins followed by a success
 
-> Exercício inteiramente sintético. Nenhum host, usuário, pacote de rede ou conta real foi monitorado. Os endereços abaixo pertencem a faixas reservadas para documentação.
+> Entirely synthetic exercise. No real host, user, network packet or account was monitored. The addresses below belong to ranges reserved for documentation.
 
-## Resumo executivo
+## Executive summary
 
-O cenário `compromised`, seed `2026`, gerou 16 eventos de autenticação. Cinco falhas para `admin`, vindas de `203.0.113.66`, ocorreram entre `12:30` e `12:34 UTC`. Um login bem-sucedido do mesmo IP e usuário foi registrado em `12:35 UTC`.
+The `compromised` scenario, seed `2026`, generated 16 authentication events. Five failures for `admin`, coming from `203.0.113.66`, occurred between `12:30` and `12:34 UTC`. A successful login from the same IP and user was recorded at `12:35 UTC`.
 
-O sistema criou dois alertas para a mesma sequência: `multiple_failed_logins` com severidade `medium` e `successful_login_after_failures` com severidade `high`. O segundo foi colocado em `investigating` pela API, com uma nota identificada como simulação. O primeiro permanece `open`. Isso é uma decisão didática do laboratório, não uma confirmação de comprometimento.
+The system created two alerts for the same sequence: `multiple_failed_logins` with severity `medium` and `successful_login_after_failures` with severity `high`. The second was set to `investigating` through the API, with a note identifying it as a simulation. The first remains `open`. This is a teaching decision for the lab, not a confirmation of compromise.
 
-## Escopo e reprodução
+## Scope and reproduction
 
-- Cenário: `compromised`
+- Scenario: `compromised`
 - Seed: `2026`
-- Eventos: 16 (10 de atividade-base sintética e 6 na sequência de teste)
-- Host fictício: `auth-server-01`
-- Execução armazenada: `ac958c2bb9d5494b921fd16a81719abc`
-- Regra de correlação: pelo menos 5 falhas do mesmo IP/usuário em 10 minutos, seguidas de sucesso em até 5 minutos
+- Events: 16 (10 of synthetic baseline activity and 6 in the test sequence)
+- Fictitious host: `auth-server-01`
+- Stored run: `ac958c2bb9d5494b921fd16a81719abc`
+- Correlation rule: at least 5 failures from the same IP/user within 10 minutes, followed by a success within 5 minutes
 
-Para reproduzir as detecções sem escrever no banco principal:
+To reproduce the detections without writing to the main database:
 
 ```bash
 ./.venv/bin/python -m soc_lab.simulator \
@@ -28,64 +28,64 @@ Para reproduzir as detecções sem escrever no banco principal:
 	--db /tmp/soc-lab-analysis.sqlite
 ```
 
-## Evidências observadas
+## Observed evidence
 
-| Horário UTC | Evento sintético | Interpretação da regra |
+| Time (UTC) | Synthetic event | Rule interpretation |
 | --- | --- | --- |
-| 12:30 | Falha para `admin` de `203.0.113.66` | Primeira falha da sequência |
-| 12:31–12:33 | Mais três falhas do mesmo IP/usuário | A contagem se aproxima do limiar |
-| 12:34 | Quinta falha do mesmo IP/usuário | A regra de falhas repetidas atinge 5 em 10 min |
-| 12:35 | Sucesso para `admin` do mesmo IP | A regra de correlação eleva a severidade |
+| 12:30 | Failure for `admin` from `203.0.113.66` | First failure in the sequence |
+| 12:31–12:33 | Three more failures from the same IP/user | The count approaches the threshold |
+| 12:34 | Fifth failure from the same IP/user | The repeated-failures rule reaches 5 within 10 min |
+| 12:35 | Success for `admin` from the same IP | The correlation rule raises the severity |
 
-Há dez eventos sintéticos de contexto antes da sequência. Eles não satisfazem as regras do cenário `compromised` e não foram usados para inferir uma origem real.
+There are ten synthetic context events before the sequence. They do not meet the rules of the `compromised` scenario and were not used to infer a real source.
 
-## O que cada campo significa
+## What each field means
 
-| Campo | Valor neste caso | Significado e limite |
+| Field | Value in this case | Meaning and limits |
 | --- | --- | --- |
-| `timestamp` | 12:30–12:35 UTC | Momento fictício do evento. UTC permite ordenar fontes com fusos diferentes. |
-| `event_type` | `authentication` | Classifica o registro como autenticação; não é captura de pacote. |
-| `source_ip` | `203.0.113.66` | IP de origem sintético, reservado para documentação; não identifica uma pessoa. |
-| `username` | `admin` | Conta-alvo fictícia. O nome da conta, sozinho, não prova quem tentou autenticar. |
-| `outcome` | `failure` ou `success` | Resultado registrado pelo simulador, não confirmado por um provedor real. |
-| `hostname` | `auth-server-01` | Host fictício que teria observado a autenticação. |
-| `event_id` | `evt-0011` a `evt-0016` | Identificador sequencial útil para referenciar cada evento do conjunto. |
-| `scenario` | `compromised` | Rótulo do cenário gerado, não uma classificação de incidente real. |
+| `timestamp` | 12:30–12:35 UTC | Fictitious time of the event. UTC allows ordering sources with different time zones. |
+| `event_type` | `authentication` | Classifies the record as authentication; it is not a packet capture. |
+| `source_ip` | `203.0.113.66` | Synthetic source IP, reserved for documentation; it does not identify a person. |
+| `username` | `admin` | Fictitious target account. The account name alone does not prove who tried to authenticate. |
+| `outcome` | `failure` or `success` | Result recorded by the simulator, not confirmed by a real identity provider. |
+| `hostname` | `auth-server-01` | Fictitious host that would have observed the authentication. |
+| `event_id` | `evt-0011` to `evt-0016` | Sequential identifier useful for referencing each event in the set. |
+| `scenario` | `compromised` | Label of the generated scenario, not a real incident classification. |
 
-## Como cada regra avaliou os dados
+## How each rule evaluated the data
 
-1. `multiple_failed_logins` agrupou as falhas pelo IP e contou cinco eventos em uma janela móvel de dez minutos. Isso gerou severidade `medium`; essa regra não precisa saber o usuário.
-2. `successful_login_after_failures` agrupou por IP **e** usuário, encontrou cinco falhas em dez minutos e um sucesso um minuto após a última falha. Como um minuto está dentro da janela de correlação de cinco minutos, gerou severidade `high`.
-3. A regra não lê senhas, não decodifica tráfego e não decide que uma conta foi comprometida. Ela compara timestamps, IP, usuário e resultado já presentes nos eventos.
+1. `multiple_failed_logins` grouped the failures by IP and counted five events in a sliding ten-minute window. This produced severity `medium`; this rule does not need to know the user.
+2. `successful_login_after_failures` grouped by IP **and** user, found five failures within ten minutes and a success one minute after the last failure. Since one minute is within the five-minute correlation window, it produced severity `high`.
+3. The rule does not read passwords, does not decode traffic and does not decide that an account was compromised. It compares timestamps, IP, user and outcome already present in the events.
 
-## Por que existem dois alertas?
+## Why are there two alerts?
 
-As regras respondem a perguntas diferentes. `multiple_failed_logins` pergunta se houve muitas falhas do mesmo IP e gera um alerta `medium`. `successful_login_after_failures` pergunta se o mesmo IP e usuário conseguiram entrar logo após essas falhas; por isso gera `high`.
+The rules answer different questions. `multiple_failed_logins` asks whether there were many failures from the same IP and produces a `medium` alert. `successful_login_after_failures` asks whether the same IP and user managed to log in right after those failures; that is why it produces `high`.
 
-Os dois alertas referenciam os mesmos cinco eventos de falha. Eles não significam que ocorreram dois ataques diferentes. Em um SIEM mais completo, poderíamos agrupar alertas relacionados em um único caso para reduzir duplicidade.
+Both alerts reference the same five failure events. They do not mean two different attacks happened. In a more complete SIEM, related alerts could be grouped into a single case to reduce duplication.
 
-## Avaliação do analista
+## Analyst assessment
 
-**Observação:** o conjunto de eventos corresponde exatamente às condições das duas regras. A ordem temporal é consistente: falhas, depois sucesso, para o mesmo IP e usuário.
+**Observation:** the event set matches exactly the conditions of both rules. The time order is consistent: failures, then success, for the same IP and user.
 
-**Hipótese:** se esses fossem logs reais, a sequência justificaria investigar possível uso de credenciais após tentativas repetidas.
+**Hypothesis:** if these were real logs, the sequence would justify investigating possible credential use after repeated attempts.
 
-**O que não se pode concluir:** os dados são fabricados pelo simulador; não provam que uma senha foi descoberta, que uma conta real foi acessada ou que houve atividade maliciosa. Também não identificam uma pessoa por trás do endereço IP.
+**What cannot be concluded:** the data was fabricated by the simulator; it does not prove that a password was discovered, that a real account was accessed or that there was malicious activity. It also does not identify a person behind the IP address.
 
-**Possíveis explicações benignas em um ambiente real:** usuário errando a senha antes de acertar, automação de teste autorizada, sistema intermediário compartilhado ou atividade de suporte. As regras não conhecem o contexto organizacional e podem gerar falsos positivos.
+**Possible benign explanations in a real environment:** a user mistyping the password before getting it right, authorized test automation, a shared intermediate system or support activity. The rules do not know the organizational context and can produce false positives.
 
-## Decisão e próximos passos
+## Decision and next steps
 
-O alerta `high` está marcado como `investigating`; a nota armazenada também identifica explicitamente a simulação. Num ambiente autorizado, o analista deveria:
+The `high` alert is marked as `investigating`; the stored note also explicitly identifies the simulation. In an authorized environment, the analyst should:
 
-1. Confirmar o endereço, host, método de autenticação e identidade nos logs originais do sistema ou provedor de identidade.
-2. Verificar se o login bem-sucedido e o dispositivo/sessão eram esperados.
-3. Examinar a atividade posterior à autenticação e verificar MFA, origem e histórico da conta.
-4. Se as evidências reais confirmarem risco, seguir o procedimento da organização para revogar sessões e proteger a conta. Não bloquear automaticamente com base apenas neste alerta.
+1. Confirm the address, host, authentication method and identity in the original logs of the system or identity provider.
+2. Check whether the successful login and the device/session were expected.
+3. Review the activity after authentication and check MFA, source and account history.
+4. If real evidence confirms risk, follow the organization's procedure to revoke sessions and protect the account. Do not block automatically based on this alert alone.
 
-## Estado do laboratório
+## Lab state
 
 - `multiple_failed_logins`: `open`
 - `successful_login_after_failures`: `investigating`
-- Resposta automática: nenhuma
-- Impacto em sistemas reais: nenhum
+- Automated response: none
+- Impact on real systems: none

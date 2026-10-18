@@ -25,7 +25,7 @@ function formatTime(value) {
   const date = new Date(value);
   return Number.isNaN(date.valueOf())
     ? escapeHTML(value)
-    : date.toLocaleString("pt-BR", { timeZone: "UTC", hour12: false });
+    : date.toLocaleString("en-US", { timeZone: "UTC", hour12: false });
 }
 
 function eventPayload(row) {
@@ -54,7 +54,7 @@ async function requestJSON(path, options) {
   const response = await fetch(path, options);
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.detail || `Falha HTTP ${response.status}`);
+    throw new Error(error.detail || `HTTP error ${response.status}`);
   }
   return response.json();
 }
@@ -83,8 +83,8 @@ async function loadData() {
   state.events = events;
 
   byId("connection-dot").className = "connection-dot is-online";
-  byId("connection-label").textContent = "API conectada";
-  byId("last-updated").textContent = `Atualizado ${new Date().toLocaleTimeString("pt-BR")}`;
+  byId("connection-label").textContent = "API connected";
+  byId("last-updated").textContent = `Updated ${new Date().toLocaleTimeString("en-US", { hour12: false })}`;
   render();
   setNotice();
 }
@@ -102,7 +102,7 @@ function renderRunFilters() {
   const filters = [byId("run-filter"), byId("events-run-filter")];
   for (const filter of filters) {
     const previous = filter.value;
-    filter.innerHTML = '<option value="">Todas</option>' + state.runs.map((run) =>
+    filter.innerHTML = '<option value="">All</option>' + state.runs.map((run) =>
       `<option value="${escapeHTML(run.run_id)}">${escapeHTML(run.scenario)} · ${formatTime(run.created_at)}</option>`,
     ).join("");
     if (state.runs.some((run) => run.run_id === previous)) filter.value = previous;
@@ -178,10 +178,10 @@ function renderAlertDetail() {
   byId("detail-summary").textContent = alert.summary;
 
   const facts = [
-    ["IP de origem", alert.source_ip],
-    ["Usuário", alert.username],
-    ["Início da janela", details.window_start],
-    ["Fim da janela", details.window_end || details.correlated_success_at],
+    ["Source IP", alert.source_ip],
+    ["User", alert.username],
+    ["Window start", details.window_start],
+    ["Window end", details.window_end || details.correlated_success_at],
   ].filter(([, value]) => value);
   byId("detail-facts").innerHTML = facts.map(([label, value]) =>
     `<div><dt>${escapeHTML(label)}</dt><dd>${escapeHTML(value)}</dd></div>`,
@@ -195,12 +195,12 @@ function renderAlertDetail() {
         payload.outcome,
         payload.username,
         payload.source_ip,
-        payload.destination_port ? `porta ${payload.destination_port}` : "",
+        payload.destination_port ? `port ${payload.destination_port}` : "",
         payload.process_name,
       ].filter(Boolean).join(" · ");
       return `<li><time>${formatTime(row.timestamp).split(" ").at(-1)}</time><span>${escapeHTML(description || row.event_type)}</span></li>`;
     }).join("")
-    : '<li class="timeline-empty">Sem eventos relacionados nesta execução.</li>';
+    : '<li class="timeline-empty">No related events in this run.</li>';
 
   byId("triage-status").value = alert.status;
   byId("triage-notes").value = alert.analyst_notes;
@@ -281,7 +281,7 @@ byId("triage-form").addEventListener("submit", async (event) => {
       }),
     });
     await loadData();
-    setNotice("Triagem salva.");
+    setNotice("Triage saved.");
   } catch (error) {
     setNotice(error.message);
   }
@@ -289,6 +289,6 @@ byId("triage-form").addEventListener("submit", async (event) => {
 
 loadData().catch((error) => {
   byId("connection-dot").className = "connection-dot is-offline";
-  byId("connection-label").textContent = "API indisponível";
+  byId("connection-label").textContent = "API unavailable";
   setNotice(error.message);
 });

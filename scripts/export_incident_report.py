@@ -30,12 +30,13 @@ PALE = colors.HexColor("#F2F5F0")
 
 def register_fonts() -> None:
     candidates = (
-        Path("/usr/share/fonts/dejavu"),
-        Path("/usr/share/fonts/truetype/dejavu"),
+        (Path("/usr/share/fonts/dejavu"), "DejaVuSans.ttf", "DejaVuSans-Bold.ttf"),
+        (Path("/usr/share/fonts/truetype/dejavu"), "DejaVuSans.ttf", "DejaVuSans-Bold.ttf"),
+        (Path("C:/Windows/Fonts"), "arial.ttf", "arialbd.ttf"),
     )
-    for directory in candidates:
-        regular = directory / "DejaVuSans.ttf"
-        bold = directory / "DejaVuSans-Bold.ttf"
+    for directory, regular_name, bold_name in candidates:
+        regular = directory / regular_name
+        bold = directory / bold_name
         if regular.exists() and bold.exists():
             pdfmetrics.registerFont(TTFont("LabSans", str(regular)))
             pdfmetrics.registerFont(TTFont("LabSans-Bold", str(bold)))
@@ -48,7 +49,7 @@ def register_fonts() -> None:
             )
             return
     raise RuntimeError(
-        "DejaVu Sans not found. Install the DejaVu fonts before exporting the PDF."
+        "No supported font found (DejaVu Sans or Arial). Install DejaVu fonts before exporting the PDF."
     )
 
 
@@ -148,11 +149,11 @@ def draw_page(canvas, document) -> None:
     canvas.line(document.leftMargin, height - 14 * mm, width - document.rightMargin, height - 14 * mm)
     canvas.setFont("LabSans-Bold", 7)
     canvas.setFillColor(GREEN)
-    canvas.drawString(document.leftMargin, height - 11 * mm, "LOCAL SOC LAB / RELATÓRIO DE TRIAGEM")
+    canvas.drawString(document.leftMargin, height - 11 * mm, "LOCAL SOC LAB / TRIAGE REPORT")
     canvas.setFont("LabSans", 7)
     canvas.setFillColor(MUTED)
-    canvas.drawString(document.leftMargin, 10 * mm, "SIMULAÇÃO SINTÉTICA · SEM TELEMETRIA REAL")
-    canvas.drawRightString(width - document.rightMargin, 10 * mm, f"Página {document.page}")
+    canvas.drawString(document.leftMargin, 10 * mm, "SYNTHETIC SIMULATION · NO REAL TELEMETRY")
+    canvas.drawRightString(width - document.rightMargin, 10 * mm, f"Page {document.page}")
     canvas.restoreState()
 
 
@@ -167,69 +168,69 @@ def build_report(output: Path) -> None:
         leftMargin=18 * mm,
         topMargin=21 * mm,
         bottomMargin=18 * mm,
-        title="Análise simulada 001 - falhas de login seguidas de sucesso",
+        title="Simulated analysis 001 - failed logins followed by a success",
         author="Local SOC Home Lab",
-        subject="Relatório didático de triagem de alertas sintéticos",
+        subject="Teaching report on triage of synthetic alerts",
     )
     story = []
 
     story.extend(
         [
             paragraph("SECURITY OPERATIONS / HOME LAB", styles["eyebrow"]),
-            paragraph("Análise simulada de incidente", styles["title"]),
+            paragraph("Simulated incident analysis", styles["title"]),
             paragraph(
-                "Falhas de autenticação seguidas de login bem-sucedido",
+                "Authentication failures followed by a successful login",
                 styles["subtitle"],
             ),
             paragraph(
-                "SIMULAÇÃO — Nenhum host, usuário, pacote de rede ou conta real foi "
-                "monitorado. O IP 203.0.113.66 pertence a uma faixa reservada para "
-                "documentação e não identifica uma origem real.",
+                "SIMULATION — No real host, user, network packet or account was "
+                "monitored. The IP 203.0.113.66 belongs to a range reserved for "
+                "documentation and does not identify a real source.",
                 styles["callout"],
             ),
             Spacer(1, 8),
         ]
     )
 
-    add_section(story, "1. Resumo executivo", styles)
+    add_section(story, "1. Executive summary", styles)
     story.append(
         paragraph(
-            "O cenário <b>compromised</b>, seed <b>2026</b>, gerou 16 eventos "
-            "sintéticos. Cinco falhas de login para <b>admin</b> ocorreram do mesmo "
-            "IP entre 12:30 e 12:34 UTC; um sucesso para a mesma conta e origem veio "
-            "às 12:35 UTC. O detector produziu um alerta <b>medium</b> de falhas "
-            "repetidas e um alerta <b>high</b> pela correlação com o sucesso. O alerta "
-            "high foi registrado como <b>investigating</b>; o medium permanece "
-            "<b>open</b>.",
+            "The <b>compromised</b> scenario, seed <b>2026</b>, generated 16 synthetic "
+            "events. Five login failures for <b>admin</b> came from the same IP "
+            "between 12:30 and 12:34 UTC; a success for the same account and source "
+            "followed at 12:35 UTC. The detector produced a <b>medium</b> alert for "
+            "repeated failures and a <b>high</b> alert for the correlation with the "
+            "success. The high alert was recorded as <b>investigating</b>; the medium "
+            "one remains <b>open</b>.",
             styles["body"],
         )
     )
     story.append(
         paragraph(
-            "Conclusão do exercício: os eventos satisfazem as regras implementadas. "
-            "Isso não prova comprometimento real; é necessário validar fontes "
-            "originais e contexto antes de classificar um incidente.",
+            "Exercise conclusion: the events meet the implemented rules. This does "
+            "not prove a real compromise; original sources and context must be "
+            "validated before classifying an incident.",
             styles["body"],
         )
     )
 
-    add_section(story, "2. Escopo e reprodução", styles)
+    add_section(story, "2. Scope and reproduction", styles)
     story.append(
         make_table(
             [
-                ["Item", "Valor", "O que representa"],
-                ["Cenário / seed", "compromised / 2026", "Entrada reproduzível do simulador."],
-                ["Eventos", "16", "10 eventos de contexto e 6 eventos da sequência de teste."],
-                ["Host", "auth-server-01", "Nome fictício incluído pelo gerador."],
-                ["Run ID", "ac958c2bb9d5494b921fd16a81719abc", "Execução registrada no SQLite local."],
-                ["Resposta", "Nenhuma", "Nenhum bloqueio ou ação automática foi executado."],
+                ["Item", "Value", "What it represents"],
+                ["Scenario / seed", "compromised / 2026", "Reproducible simulator input."],
+                ["Events", "16", "10 context events and 6 events in the test sequence."],
+                ["Host", "auth-server-01", "Fictitious name included by the generator."],
+                ["Run ID", "ac958c2bb9d5494b921fd16a81719abc", "Run recorded in the local SQLite database."],
+                ["Response", "None", "No block or automated action was executed."],
             ],
             styles,
             [34 * mm, 59 * mm, 81 * mm],
         )
     )
     story.append(Spacer(1, 7))
-    story.append(paragraph("Reprodução sem alterar o banco principal:", styles["body"]))
+    story.append(paragraph("Reproduction without changing the main database:", styles["body"]))
     story.append(
         paragraph(
             "./.venv/bin/python -m soc_lab.simulator --scenario compromised --seed 2026 "
@@ -240,125 +241,125 @@ def build_report(output: Path) -> None:
         )
     )
 
-    add_section(story, "3. Linha do tempo observada", styles)
+    add_section(story, "3. Observed timeline", styles)
     story.append(
         make_table(
             [
-                ["Horário UTC", "Evento sintético", "Interpretação"],
-                ["12:30", "Falha para admin de 203.0.113.66", "Primeira falha."],
-                ["12:31–12:33", "Mais três falhas para a mesma conta e origem", "Contagem sobe para quatro."],
-                ["12:34", "Quinta falha para a mesma conta e origem", "A regra de falhas repetidas atinge o limiar 5/10 min."],
-                ["12:35", "Sucesso para admin do mesmo IP", "A regra de correlação encontra sucesso em até 5 min."],
+                ["Time (UTC)", "Synthetic event", "Interpretation"],
+                ["12:30", "Failure for admin from 203.0.113.66", "First failure."],
+                ["12:31–12:33", "Three more failures for the same account and source", "Count rises to four."],
+                ["12:34", "Fifth failure for the same account and source", "The repeated-failures rule reaches the 5/10 min threshold."],
+                ["12:35", "Success for admin from the same IP", "The correlation rule finds a success within 5 min."],
             ],
             styles,
             [27 * mm, 74 * mm, 73 * mm],
         )
     )
 
-    add_section(story, "4. Significado dos campos", styles)
+    add_section(story, "4. Field meanings", styles)
     story.append(
         make_table(
             [
-                ["Campo", "Exemplo", "Significado / limite"],
-                ["timestamp", "12:30–12:35 UTC", "Tempo fictício do evento; UTC facilita ordenar fontes."],
-                ["event_type", "authentication", "Classifica o registro; não é captura de pacote."],
-                ["source_ip", "203.0.113.66", "IP sintético. Não identifica uma pessoa nem uma rede real."],
-                ["username", "admin", "Conta-alvo fictícia; não revela quem tentou autenticar."],
-                ["outcome", "failure / success", "Resultado produzido pelo simulador, não confirmado por um IdP real."],
-                ["hostname", "auth-server-01", "Nome de host fictício atribuído aos eventos."],
-                ["event_id", "evt-0011…evt-0016", "Identificador sequencial para localizar registros no conjunto."],
-                ["scenario", "compromised", "Rótulo do teste; não é veredito de incidente."],
+                ["Field", "Example", "Meaning / limits"],
+                ["timestamp", "12:30–12:35 UTC", "Fictitious event time; UTC makes it easy to order sources."],
+                ["event_type", "authentication", "Classifies the record; it is not a packet capture."],
+                ["source_ip", "203.0.113.66", "Synthetic IP. It does not identify a person or a real network."],
+                ["username", "admin", "Fictitious target account; it does not reveal who tried to authenticate."],
+                ["outcome", "failure / success", "Result produced by the simulator, not confirmed by a real IdP."],
+                ["hostname", "auth-server-01", "Fictitious host name assigned to the events."],
+                ["event_id", "evt-0011…evt-0016", "Sequential identifier to locate records in the set."],
+                ["scenario", "compromised", "Test label; it is not an incident verdict."],
             ],
             styles,
             [29 * mm, 47 * mm, 98 * mm],
         )
     )
 
-    add_section(story, "5. Regras acionadas", styles)
+    add_section(story, "5. Triggered rules", styles)
     story.append(
         paragraph(
-            "<b>multiple_failed_logins — medium.</b> Agrupa falhas por IP e verifica "
-            "se há pelo menos cinco em uma janela móvel de dez minutos. Esta regra "
-            "não precisa saber o usuário; por isso não é a regra que afirma que "
-            "admin autenticou com sucesso.",
+            "<b>multiple_failed_logins — medium.</b> Groups failures by IP and checks "
+            "for at least five in a sliding ten-minute window. This rule does not "
+            "need to know the user; that is why it is not the rule that states that "
+            "admin authenticated successfully.",
             styles["body"],
         )
     )
     story.append(
         paragraph(
-            "<b>successful_login_after_failures — high.</b> Correlaciona pelo par "
-            "IP + usuário. Encontrou cinco falhas para admin entre 12:30 e 12:34 e "
-            "um sucesso às 12:35. A diferença de um minuto está dentro da janela "
-            "configurada de cinco minutos, então a severidade foi elevada.",
+            "<b>successful_login_after_failures — high.</b> Correlates by the "
+            "IP + user pair. It found five failures for admin between 12:30 and 12:34 "
+            "and a success at 12:35. The one-minute gap is within the configured "
+            "five-minute window, so the severity was raised.",
             styles["body"],
         )
     )
     story.append(
         paragraph(
-            "São dois alertas sobre os mesmos eventos, não duas ocorrências "
-            "independentes. Um SIEM mais completo poderia agrupar ambos em um único "
-            "caso para reduzir duplicidade.",
+            "These are two alerts about the same events, not two independent "
+            "occurrences. A more complete SIEM could group both into a single case "
+            "to reduce duplication.",
             styles["body"],
         )
     )
 
-    add_section(story, "6. Raciocínio de triagem", styles)
+    add_section(story, "6. Triage reasoning", styles)
     story.append(
         make_table(
             [
-                ["Categoria", "Análise"],
-                ["Observação", "Cinco falhas e um sucesso subsequente compartilham o mesmo IP e usuário no conjunto gerado."],
-                ["Hipótese", "Se fossem logs reais, a sequência justificaria investigar uso de credenciais após tentativas repetidas."],
-                ["Não demonstrado", "Não há evidência de senha descoberta, acesso real, identidade do operador, MFA ou atividade pós-login."],
-                ["Alternativas benignas", "Erro de digitação antes do sucesso, teste autorizado, suporte ou endereço intermediário compartilhado."],
-                ["Confiança", "Alta de que a regra corresponde aos eventos sintéticos; nenhuma conclusão sobre um ambiente real."],
+                ["Category", "Analysis"],
+                ["Observation", "Five failures and a subsequent success share the same IP and user in the generated set."],
+                ["Hypothesis", "If these were real logs, the sequence would justify investigating credential use after repeated attempts."],
+                ["Not demonstrated", "There is no evidence of a discovered password, real access, operator identity, MFA or post-login activity."],
+                ["Benign alternatives", "Typo before the success, authorized testing, support activity or a shared intermediate address."],
+                ["Confidence", "High that the rule matches the synthetic events; no conclusion about a real environment."],
             ],
             styles,
             [37 * mm, 137 * mm],
         )
     )
 
-    add_section(story, "7. Decisão registrada e próximos passos", styles)
+    add_section(story, "7. Recorded decision and next steps", styles)
     story.append(
         paragraph(
-            "O alerta high, ID <b>22d19b8ead764333bb959ce0bde6812f</b>, está "
-            "<b>investigating</b>. A nota persistida marca explicitamente a simulação "
-            "e recomenda verificar logs originais antes de concluir comprometimento. "
-            "O alerta medium, ID <b>c53808f573ce4dec8578f0303dc0605f</b>, permanece "
+            "The high alert, ID <b>22d19b8ead764333bb959ce0bde6812f</b>, is "
+            "<b>investigating</b>. The stored note explicitly marks the simulation "
+            "and recommends checking original logs before concluding a compromise. "
+            "The medium alert, ID <b>c53808f573ce4dec8578f0303dc0605f</b>, remains "
             "<b>open</b>.",
             styles["body"],
         )
     )
     for step in (
-        "Confirmar IP, host, usuário e método nos logs originais do sistema ou provedor de identidade.",
-        "Verificar se o sucesso e o dispositivo/sessão eram esperados e revisar atividade posterior.",
-        "Consultar MFA, origem e histórico da conta para comparação com o comportamento normal.",
-        "Se evidências reais confirmarem risco, seguir o procedimento autorizado da organização para proteger a conta e revogar sessões.",
+        "Confirm IP, host, user and method in the original logs of the system or identity provider.",
+        "Check whether the success and the device/session were expected and review the activity that followed.",
+        "Check MFA, source and account history to compare with normal behavior.",
+        "If real evidence confirms risk, follow the organization's authorized procedure to protect the account and revoke sessions.",
     ):
         story.append(paragraph(f"• {step}", styles["body"]))
 
-    add_section(story, "8. Limitações e conclusão", styles)
+    add_section(story, "8. Limitations and conclusion", styles)
     story.append(
         paragraph(
-            "O laboratório analisou somente JSONL sintético. Não leu logs do "
-            "Windows/Linux, não observou tráfego, não analisou TCP/UDP e não executou "
-            "resposta automática. O estado <b>investigating</b> é parte do exercício. "
-            "Nunca bloquear o IP de documentação com base neste resultado; em caso "
-            "real, validar evidências originais e seguir o processo autorizado.",
+            "The lab analyzed synthetic JSONL only. It did not read Windows/Linux "
+            "logs, did not observe traffic, did not analyze TCP/UDP and did not run "
+            "any automated response. The <b>investigating</b> status is part of the "
+            "exercise. Never block the documentation IP based on this result; in a "
+            "real case, validate the original evidence and follow the authorized process.",
             styles["body"],
         )
     )
     story.append(Spacer(1, 12))
     story.append(
         paragraph(
-            "Relatório educativo do SOC Home Lab · cenário sintético · "
-            "não representa um incidente real",
+            "SOC Home Lab teaching report · synthetic scenario · "
+            "does not represent a real incident",
             styles["center"],
         )
     )
 
     document.build(story, onFirstPage=draw_page, onLaterPages=draw_page)
-    print(f"PDF gerado: {output}")
+    print(f"PDF generated: {output}")
 
 
 def main() -> None:

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -10,15 +10,15 @@
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="/" aria-label="Local SOC, início">
+      <a class="brand" href="/" aria-label="Local SOC, home">
         <span class="brand-mark">LS</span>
         <span class="brand-name">LOCAL <strong>SOC</strong></span>
       </a>
       <div class="connection-state">
         <span id="connection-dot" class="connection-dot"></span>
-        <span id="connection-label">Conectando à API</span>
+        <span id="connection-label">Connecting to API</span>
         <span class="topbar-divider"></span>
-        <span id="last-updated">Aguardando dados</span>
+        <span id="last-updated">Waiting for data</span>
       </div>
     </header>
 
@@ -26,74 +26,74 @@
       <section class="page-heading">
         <div>
           <p class="eyebrow">SECURITY OPERATIONS / HOME LAB</p>
-          <h1>Central de alertas</h1>
+          <h1>Alert center</h1>
           <p class="page-description">
-            Eventos normalizados, detecções e triagem do laboratório.
+            Normalized events, detections and triage for the lab.
           </p>
         </div>
         <button id="refresh-button" class="button button-secondary" type="button">
-          Atualizar dados
+          Refresh data
         </button>
       </section>
 
       <p id="notice" class="notice" role="status" hidden></p>
 
-      <section class="metrics" aria-label="Resumo do SOC">
+      <section class="metrics" aria-label="SOC summary">
         <article class="metric metric-primary">
-          <span>Alertas abertos</span>
+          <span>Open alerts</span>
           <strong id="metric-open">--</strong>
-          <small>aguardando triagem</small>
+          <small>awaiting triage</small>
         </article>
         <article class="metric">
-          <span>Severidade alta</span>
+          <span>High severity</span>
           <strong id="metric-high">--</strong>
-          <small>em todas as execuções</small>
+          <small>across all runs</small>
         </article>
         <article class="metric">
-          <span>Eventos</span>
+          <span>Events</span>
           <strong id="metric-events">--</strong>
-          <small>registrados localmente</small>
+          <small>stored locally</small>
         </article>
         <article class="metric">
-          <span>Execuções</span>
+          <span>Runs</span>
           <strong id="metric-runs">--</strong>
-          <small>análises armazenadas</small>
+          <small>stored analyses</small>
         </article>
       </section>
 
-      <section class="workbench" aria-label="Console de monitoramento">
+      <section class="workbench" aria-label="Monitoring console">
         <div class="workbench-header">
-          <nav class="view-tabs" aria-label="Seções do console">
+          <nav class="view-tabs" aria-label="Console sections">
             <button class="view-tab is-active" data-view="alerts" type="button">
-              Alertas <span id="alert-count" class="tab-count">0</span>
+              Alerts <span id="alert-count" class="tab-count">0</span>
             </button>
-            <button class="view-tab" data-view="events" type="button">Eventos</button>
-            <button class="view-tab" data-view="runs" type="button">Execuções</button>
+            <button class="view-tab" data-view="events" type="button">Events</button>
+            <button class="view-tab" data-view="runs" type="button">Runs</button>
           </nav>
 
           <div id="alert-filters" class="filter-bar">
             <label>
               Status
               <select id="status-filter">
-                <option value="">Todos</option>
-                <option value="open">Aberto</option>
-                <option value="investigating">Em investigação</option>
-                <option value="closed">Fechado</option>
+                <option value="">All</option>
+                <option value="open">Open</option>
+                <option value="investigating">Investigating</option>
+                <option value="closed">Closed</option>
               </select>
             </label>
             <label>
-              Severidade
+              Severity
               <select id="severity-filter">
-                <option value="">Todas</option>
-                <option value="high">Alta</option>
-                <option value="medium">Média</option>
-                <option value="low">Baixa</option>
+                <option value="">All</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
               </select>
             </label>
             <label>
-              Execução
+              Run
               <select id="run-filter">
-                <option value="">Todas</option>
+                <option value="">All</option>
               </select>
             </label>
           </div>
@@ -104,25 +104,25 @@
             <div class="table-section">
               <div class="section-heading">
                 <div>
-                  <h2>Fila de alertas</h2>
-                  <p>Selecione um alerta para revisar as evidências.</p>
+                  <h2>Alert queue</h2>
+                  <p>Select an alert to review the evidence.</p>
                 </div>
               </div>
               <div class="table-scroll">
                 <table>
                   <thead>
                     <tr>
-                      <th scope="col">Horário</th>
-                      <th scope="col">Nível</th>
-                      <th scope="col">Detecção</th>
-                      <th scope="col">Origem</th>
+                      <th scope="col">Time</th>
+                      <th scope="col">Level</th>
+                      <th scope="col">Detection</th>
+                      <th scope="col">Source</th>
                       <th scope="col">Status</th>
                     </tr>
                   </thead>
                   <tbody id="alerts-table-body"></tbody>
                 </table>
                 <p id="alerts-empty" class="empty-state" hidden>
-                  Nenhum alerta corresponde aos filtros.
+                  No alerts match the filters.
                 </p>
               </div>
             </div>
@@ -130,8 +130,8 @@
             <aside id="alert-detail" class="detail-panel" aria-live="polite">
               <div id="detail-empty" class="detail-empty">
                 <span class="detail-index">TRIAGE / 01</span>
-                <h2>Selecione um alerta</h2>
-                <p>As evidências e ações de triagem aparecerão aqui.</p>
+                <h2>Select an alert</h2>
+                <p>Evidence and triage actions will appear here.</p>
               </div>
               <div id="detail-content" hidden>
                 <div class="detail-heading">
@@ -143,31 +143,31 @@
                 <dl id="detail-facts" class="fact-list"></dl>
 
                 <div class="timeline-section">
-                  <h3>Eventos relacionados</h3>
+                  <h3>Related events</h3>
                   <ol id="event-timeline" class="event-timeline"></ol>
                 </div>
 
                 <form id="triage-form" class="triage-form">
-                  <h3>Registro do analista</h3>
+                  <h3>Analyst record</h3>
                   <label>
                     Status
                     <select id="triage-status" required>
-                      <option value="open">Aberto</option>
-                      <option value="investigating">Em investigação</option>
-                      <option value="closed">Fechado</option>
+                      <option value="open">Open</option>
+                      <option value="investigating">Investigating</option>
+                      <option value="closed">Closed</option>
                     </select>
                   </label>
                   <label>
-                    Notas
+                    Notes
                     <textarea
                       id="triage-notes"
                       rows="3"
                       maxlength="5000"
-                      placeholder="Registre evidências e decisão..."
+                      placeholder="Record evidence and decision..."
                     ></textarea>
                   </label>
                   <button class="button button-primary" type="submit">
-                    Salvar triagem
+                    Save triage
                   </button>
                 </form>
               </div>
@@ -178,13 +178,13 @@
         <section id="events-view" class="view-panel" hidden>
           <div class="section-heading">
             <div>
-              <h2>Explorador de eventos</h2>
-              <p>Registros recebidos pela última análise selecionada.</p>
+              <h2>Event explorer</h2>
+              <p>Records received by the selected analysis.</p>
             </div>
             <label class="compact-filter">
-              Execução
+              Run
               <select id="events-run-filter">
-                <option value="">Todas</option>
+                <option value="">All</option>
               </select>
             </label>
           </div>
@@ -193,44 +193,44 @@
               <thead>
                 <tr>
                   <th scope="col">Timestamp</th>
-                  <th scope="col">Tipo</th>
-                  <th scope="col">Origem</th>
-                  <th scope="col">Usuário</th>
-                  <th scope="col">Resultado</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Source</th>
+                  <th scope="col">User</th>
+                  <th scope="col">Outcome</th>
                   <th scope="col">Host</th>
                 </tr>
               </thead>
               <tbody id="events-table-body"></tbody>
             </table>
-            <p id="events-empty" class="empty-state" hidden>Nenhum evento encontrado.</p>
+            <p id="events-empty" class="empty-state" hidden>No events found.</p>
           </div>
         </section>
 
         <section id="runs-view" class="view-panel" hidden>
           <div class="section-heading">
             <div>
-              <h2>Histórico de análises</h2>
-              <p>Cenários processados e seus resultados.</p>
+              <h2>Analysis history</h2>
+              <p>Processed scenarios and their results.</p>
             </div>
           </div>
           <div class="table-scroll">
             <table>
               <thead>
                 <tr>
-                  <th scope="col">Executada em</th>
-                  <th scope="col">Cenário</th>
-                  <th scope="col">Eventos</th>
-                  <th scope="col">Alertas</th>
-                  <th scope="col">Identificador</th>
+                  <th scope="col">Run at</th>
+                  <th scope="col">Scenario</th>
+                  <th scope="col">Events</th>
+                  <th scope="col">Alerts</th>
+                  <th scope="col">Identifier</th>
                 </tr>
               </thead>
               <tbody id="runs-table-body"></tbody>
             </table>
-            <p id="runs-empty" class="empty-state" hidden>Nenhuma execução encontrada.</p>
+            <p id="runs-empty" class="empty-state" hidden>No runs found.</p>
           </div>
         </section>
       </section>
-      <footer class="page-footer">LOCAL SOC LAB <span>•</span> Dados locais e cenários sintéticos</footer>
+      <footer class="page-footer">LOCAL SOC LAB <span>•</span> Local data and synthetic scenarios</footer>
     </main>
   </body>
 </html>

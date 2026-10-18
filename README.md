@@ -61,7 +61,7 @@ To analyze your own JSONL, each line must be an object with a `timestamp` that i
 
 ## Synthetic incident report
 
-See [docs/incident-triage.md](docs/incident-triage.md) (in Portuguese) and its [PDF version](docs/reports/incident-triage-001.pdf). It documents the `compromised` scenario with seed `2026`, is marked as simulated, and walks through evidence, decision and next investigation steps; no real systems or accounts were involved.
+See [docs/incident-triage.md](docs/incident-triage.md) and its [PDF version](docs/reports/incident-triage-001.pdf). It documents the `compromised` scenario with seed `2026`, is marked as simulated, and walks through evidence, decision and next investigation steps; no real systems or accounts were involved.
 
 To regenerate the PDF, install the optional reporting dependency and run:
 
