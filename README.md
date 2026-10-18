@@ -1,34 +1,36 @@
 # SOC Home Lab
 
-**English:** [Read the English overview](README.en.md)
+**English** | [Português](README.pt-BR.md)
 
-Um mini SOC local e reproduzível para praticar geração e normalização de eventos, regras de detecção, persistência, monitoramento e triagem. A interface e as regras trabalham com dados locais; o simulador não gera tráfego de rede.
+A local, reproducible mini SOC for practicing event generation and normalization, deterministic detection rules, persistence, alert monitoring and analyst triage. The interface and rules work on local data only; the simulator creates synthetic records and generates no network traffic.
 
-## Arquitetura
+## Architecture
 
-`simulador -> JSONL -> CLI/regras -> SQLite <-> FastAPI <-> frontend estático`
+`simulator -> JSONL -> CLI/rules -> SQLite <-> FastAPI <-> static frontend`
 
-O frontend em `frontend/` consome somente a API HTTP; o backend FastAPI acessa `data/soc_lab.sqlite`. O FastAPI também serve os arquivos estáticos na mesma origem. Não é preciso Node para desenvolver ou executar esta interface. Eventos e alertas gerados são dados de runtime ignorados pelo Git; os eventos de exemplo versionados são sintéticos.
+The frontend in `frontend/` only consumes the HTTP API; the FastAPI backend reads and writes `data/soc_lab.sqlite` and also serves the static files from the same origin. No Node.js or build step is required. Generated events and alerts are runtime data ignored by Git; the versioned sample events are synthetic.
 
-## Capturas do dashboard
+## Dashboard screenshots
 
-![Resumo do dashboard SOC com métricas do laboratório](docs/screenshots/soc-dashboard.png)
+![SOC dashboard overview with lab metrics](docs/screenshots/soc-dashboard.png)
 
-![Fila de alertas sintéticos com severidades e estados de triagem](docs/screenshots/alert-queue.png)
+![Synthetic alert queue with severity and triage status](docs/screenshots/alert-queue.png)
 
-## Regras
+## Detection rules
 
-| Regra | Condição padrão | Severidade |
+| Rule | Default condition | Severity |
 | --- | --- | --- |
-| `multiple_failed_logins` | 5 falhas do mesmo IP em 10 min | medium |
-| `successful_login_after_failures` | 5 falhas do mesmo IP/usuário e sucesso em até 5 min | high |
-| `password_spraying` | Falhas contra 5 usuários distintos do mesmo IP em 10 min | high |
-| `firewall_port_sweep` | 10 portas distintas negadas em 10 min | medium |
-| `encoded_powershell_command` | Criação de processo PowerShell com argumento de comando codificado | high |
+| `multiple_failed_logins` | 5 failed logins from the same IP within 10 minutes | medium |
+| `successful_login_after_failures` | 5 failures for the same IP/account followed by a success within 5 minutes | high |
+| `password_spraying` | Failures against 5 distinct accounts from the same IP within 10 minutes | high |
+| `firewall_port_sweep` | Denied connections to 10 distinct ports within 10 minutes | medium |
+| `encoded_powershell_command` | PowerShell process creation with an encoded-command argument | high |
 
-## Instalar e executar
+These rules classify the supplied events; on their own they do not confirm a real incident.
 
-Requer Python 3.10 ou superior. FastAPI e Uvicorn são dependências externas; a instalação inicial precisa de acesso ao índice de pacotes Python.
+## Setup and usage
+
+Requires Python 3.10 or later. FastAPI and Uvicorn are runtime dependencies; the first install needs access to the Python package index.
 
 ```bash
 python3 -m venv .venv
@@ -36,54 +38,54 @@ python3 -m venv .venv
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
-Gere os dados e analise-os para gravar a execução no SQLite:
+Generate the data and analyze it, saving the run to SQLite:
 
 ```bash
 .venv/bin/python -m soc_lab.simulator --scenario full-suite --seed 42
 .venv/bin/python -m soc_lab.cli --input data/generated_events.jsonl
 ```
 
-Inicie a API e a interface:
+Start the API and the interface:
 
 ```bash
 .venv/bin/python -m uvicorn soc_lab.api:app --host 127.0.0.1 --port 8000 --limit-concurrency 50 --backlog 128 --timeout-keep-alive 5
 ```
 
-Acesse `http://127.0.0.1:8000` para abrir a interface e `http://127.0.0.1:8000/docs` para explorar a API. O painel mostra métricas, filtra alertas, exibe evidências e permite mudar o status e salvar notas de triagem. Use `--output` no simulador e `--db` na CLI para alterar os destinos. A mesma semente do simulador reproduz os mesmos eventos.
+Open `http://127.0.0.1:8000` for the console and `http://127.0.0.1:8000/docs` for the interactive API documentation. The dashboard shows metrics, filters alerts, displays evidence, and lets you change the triage status and save analyst notes. Use `--output` in the simulator and `--db` in the CLI to change destinations. The same simulator seed reproduces the same events.
 
-Endpoints principais: `GET /api/health`, `GET /api/overview`, `GET /api/runs`, `GET /api/alerts`, `GET /api/events` e `PATCH /api/alerts/{alert_id}/triage`.
+Main endpoints: `GET /api/health`, `GET /api/overview`, `GET /api/runs`, `GET /api/alerts`, `GET /api/events` and `PATCH /api/alerts/{alert_id}/triage`.
 
-## Segurança da API
+## Scenarios
 
-A configuração padrão é para laboratório local: inicie em `127.0.0.1`, aceite hosts `127.0.0.1` e `localhost`, limite leituras a 120/minuto por IP, gravações a 20/minuto por IP e o total a 600/minuto por processo. Corpos HTTP têm limite de 64 KiB; parâmetros de paginação e IDs têm tamanho/formato limitado; headers de proteção e CSP same-origin para o frontend são adicionados às respostas. As consultas SQLite usam parâmetros, e o modelo de triagem rejeita campos inesperados.
+`normal`, `brute-force`, `compromised`, `password-spray`, `port-scan`, `encoded-powershell` and `full-suite`. IP addresses come from ranges reserved for documentation. The simulator does not run PowerShell, does not test passwords and does not connect to any host.
 
-O comando Uvicorn limita a 50 conexões simultâneas e reduz o keep-alive para 5 segundos. Esses controles complementam o rate limit da aplicação; não são proteção contra DDoS distribuído.
+To analyze your own JSONL, each line must be an object with a `timestamp` that includes a time zone. Additional fields depend on the event type: authentication uses `source_ip`, `username` and `outcome`; firewall uses `source_ip`, `destination_port` and `outcome`; process creation uses `process_name` and `command_line`.
 
-Os limites em memória são deliberadamente para um processo local: reiniciar a API zera as janelas, e múltiplos workers não compartilham contadores. Não exponha o servidor à rede pública. Para produção, adicione autenticação, TLS e reverse proxy com rate limiting compartilhado (por exemplo, Redis) e limites de conexão/concorrência.
+## Synthetic incident report
 
-Os valores podem ser ajustados com `SOC_API_RATE_PER_MINUTE`, `SOC_API_WRITE_RATE_PER_MINUTE`, `SOC_API_GLOBAL_RATE_PER_MINUTE`, `SOC_API_MAX_BODY_BYTES` e `SOC_ALLOWED_HOSTS` (lista separada por vírgulas). O serviço não confia em `X-Forwarded-For`; atrás de proxy, configure corretamente o proxy confiável antes de usar a identidade do cliente.
+See [docs/incident-triage.md](docs/incident-triage.md) (in Portuguese) and its [PDF version](docs/reports/incident-triage-001.pdf). It documents the `compromised` scenario with seed `2026`, is marked as simulated, and walks through evidence, decision and next investigation steps; no real systems or accounts were involved.
 
-Para analisar outro JSONL, cada linha precisa ser um objeto com `timestamp` contendo fuso horário. Os campos adicionais dependem do tipo: autenticação usa `source_ip`, `username` e `outcome`; firewall usa `source_ip`, `destination_port` e `outcome`; criação de processo usa `process_name` e `command_line`.
-
-## Cenários
-
-`normal`, `brute-force`, `compromised`, `password-spray`, `port-scan`, `encoded-powershell` e `full-suite`. Os IPs usam blocos reservados para documentação. O simulador não executa PowerShell, não testa senhas e não se conecta a hosts.
-
-## Triagem de exemplo
-
-Veja [docs/incident-triage.md](docs/incident-triage.md). O caso está marcado como simulado e demonstra evidência, decisão e próximos passos de investigação sem afirmar que veio de um ambiente real.
-
-Para exportar a análise detalhada em PDF, instale a dependência documental separada e execute:
+To regenerate the PDF, install the optional reporting dependency and run:
 
 ```bash
 .venv/bin/python -m pip install -r requirements-report.txt
 .venv/bin/python scripts/export_incident_report.py
 ```
 
-O arquivo é criado em `docs/reports/incident-triage-001.pdf`.
+The file is written to `docs/reports/incident-triage-001.pdf`.
 
-## Limites e próxima etapa
+## API security and deployment scope
 
-Este projeto não é um SIEM completo: ainda não coleta Windows Event Logs, syslog ou firewall de hosts reais e não substitui ferramentas como Splunk ou Elastic. Para integrar uma VM, normalize os logs para o esquema JSONL e use somente máquinas e redes que você controla. Consulte as notas de evolução em [docs/roadmap.md](docs/roadmap.md).
+The default configuration is meant for a local lab: it binds to `127.0.0.1`, accepts only the `127.0.0.1` and `localhost` hosts, limits reads to 120 requests/minute per IP, writes to 20/minute per IP and the total to 600/minute per process. HTTP bodies are capped at 64 KiB; pagination parameters and IDs have bounded size/format; security headers and a same-origin CSP for the frontend are added to responses. SQLite queries are parameterized, and the triage model rejects unexpected fields.
 
-Não publique logs reais, credenciais, tokens, dumps do banco ou dados pessoais. Faça a triagem manual; o lab não bloqueia contas nem executa respostas automáticas.
+The Uvicorn command limits the server to 50 concurrent connections and cuts keep-alive to 5 seconds. These controls complement the application rate limit; they are not protection against distributed DDoS.
+
+The in-memory limits are deliberately local to one process: restarting the API resets the windows, and multiple workers do not share counters. Values can be tuned with `SOC_API_RATE_PER_MINUTE`, `SOC_API_WRITE_RATE_PER_MINUTE`, `SOC_API_GLOBAL_RATE_PER_MINUTE`, `SOC_API_MAX_BODY_BYTES` and `SOC_ALLOWED_HOSTS` (comma-separated list). The service does not trust `X-Forwarded-For`; behind a proxy, configure the trusted proxy correctly before relying on client identity.
+
+There is no user authentication or authorization. **Do not expose this API publicly or use it for real telemetry as-is.** A public deployment needs authentication/authorization, TLS, a reverse proxy with shared rate limiting (for example, Redis), connection/concurrency limits, durable managed storage and a reviewed secret-management setup. SQLite data, generated JSONL, virtual environments and `.env` files are excluded from Git.
+
+## Limitations and next steps
+
+This is not a full SIEM: it does not yet collect Windows Event Logs, syslog or firewall logs from real hosts, does not parse live network traffic, and does not replace tools such as Splunk or Elastic. To integrate a VM, normalize its logs to the JSONL schema and use only machines and networks you control. See [docs/roadmap.md](docs/roadmap.md) for the evolution notes.
+
+Do not publish real logs, credentials, tokens, database dumps or personal data. Triage is manual: the lab does not block accounts or run automated responses.
