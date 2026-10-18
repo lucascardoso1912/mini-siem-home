@@ -1,7 +1,5 @@
 # SOC Home Lab
 
-**English** | [Português](README.pt-BR.md)
-
 A local, reproducible mini SOC for practicing event generation and normalization, deterministic detection rules, persistence, alert monitoring and analyst triage. The interface and rules work on local data only; the simulator creates synthetic records and generates no network traffic.
 
 ## Architecture
